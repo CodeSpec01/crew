@@ -1,0 +1,44 @@
+/* src/app.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  /* Colors */
+  --bg-obsidian: #090A0F;
+  --surface-glass: rgba(18, 20, 29, 0.4);
+  --border-stroke: #2A2D3D;
+  --primary-accent: #00F0FF;
+  --secondary-accent: #8A2BE2;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8B949E;
+
+  /* Typography */
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Components */
+  --radius-sharp: 4px;
+}
+
+body {
+  background-color: var(--bg-obsidian);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Utility Classes */
+.glass-panel {
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-stroke);
+  border-radius: var(--radius-sharp);
+}
