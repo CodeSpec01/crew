@@ -1,6 +1,7 @@
 <script lang="ts">
   // We export these so the parent page can pass them in
   export let roomCode: string = "----";
+  export let hostIpAddress: string = "256.256.256.256";
   
   // Mock data for our connected peers (we will sync this with Rust later)
   export let connectedPeers = [
@@ -32,6 +33,7 @@
     <div class="flex flex-col items-center gap-2">
       <span class="font-mono text-sm text-text-secondary uppercase tracking-wider">Shout Code</span>
       <span class="font-mono text-[48px] leading-none font-bold text-primary-container tracking-[0.2em]">{roomCode}</span>
+      <span class="font-mono text-[48px] leading-none font-bold text-primary-container tracking-[0.2em]">{hostIpAddress}</span>
     </div>
   </div>
 
