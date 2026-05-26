@@ -1,10 +1,49 @@
+# ==========================================
+# 1. Frontend Dependencies & Tooling Caches
+# ==========================================
+node_modules/
+.vscode/
 .DS_Store
-node_modules
-/build
-/.svelte-kit
-/package
+Thumbs.db
+
+# SvelteKit system directories
+.svelte-kit/
+
+# Vite build/temp compilation outputs
+.vite/
+.vite-temp/
+
+
+# ==========================================
+# 2. Rust & Tauri Build Artifacts
+# ==========================================
+# Cargo target output block (where all compiled binaries/rmeta sit)
+target/
+
+# Tauri v2 automatic capability generation and capability map targets
+src-tauri/gen/
+src-tauri/target/
+
+
+# ==========================================
+# 3. Native Mobile (Android) Build Outputs
+# ==========================================
+# Exclude Android local configuration wrapper
+.gradle/
+src-tauri/gen/android/.gradle/
+
+# Build caches, intermediate classes, generated resources and apks
+**/build/
+**/intermediates/
+**/outputs/
+**/tmp/
+**/reports/
+
+
+# ==========================================
+# 4. Environment Variables & Secret Tokens
+# ==========================================
+# Explicitly blocking environment credential scopes
 .env
 .env.*
 !.env.example
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
