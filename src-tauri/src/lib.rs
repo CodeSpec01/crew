@@ -101,7 +101,7 @@ pub fn run() {
                     .route("/ws", get(ws_handler))
                     .layer(Extension(state.clone()));
 
-                let _ = match local_ip() {
+                let local_ip = match local_ip() {
                     Ok(IpAddr::V4(ipv4)) => ipv4.to_string(),
                     _ => "127.0.0.1".to_string(),
                 };
@@ -118,7 +118,7 @@ pub fn run() {
                 // Fire the first log to the UI!
                 let _ = state.app_handle.emit("server-log", format!("🚀 SERVER RUNNING ON PORT {}", port));
                 
-                println!("🚀 BARE-METAL SERVER RUNNING ON PORT {}", port);
+                println!("🚀 BARE-METAL SERVER RUNNING ON PORT {}:{}", local_ip, port);
 
                 axum::serve(
                     listener,
@@ -156,11 +156,12 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String) 
         let peer_list: Vec<serde_json::Value> = clients.iter().map(|(id, peer_ip)| {
             serde_json::json!({ "id": id, "ip": peer_ip })
         }).collect();
+        println!("{:?}",peer_list);
         let _ = state.app_handle.emit("peer-update", peer_list);
     }
-
+    
     let mut ping_interval = tokio::time::interval(std::time::Duration::from_secs(10));
-
+    
     loop {
         tokio::select! {
             msg = socket.next() => {
@@ -179,17 +180,18 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String) 
             }
         }
     }
-
+    
     {
         let mut clients = state.clients.lock().unwrap();
         clients.remove(&socket_id);
-
+        
         // Emit Leave Event
         let _ = state.app_handle.emit("server-log", format!("🔴 LEFT: [{}]", socket_id));
         // Broadcast the updated list after someone leaves
         let peer_list: Vec<serde_json::Value> = clients.iter().map(|(id, peer_ip)| {
             serde_json::json!({ "id": id, "ip": peer_ip })
         }).collect();
+        println!("{:?}",peer_list);
         let _ = state.app_handle.emit("peer-update", peer_list);
     }
 }
