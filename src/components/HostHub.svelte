@@ -1,13 +1,33 @@
 <script lang="ts">
-  // We export these so the parent page can pass them in
+  import QRCode from 'qrcode';
+
   export let roomCode: string = "----";
-  export let hostIpAddress: string = "256.256.256.256";
-  
-  // Mock data for our connected peers (we will sync this with Rust later)
-  export let connectedPeers = [
-    { id: "1", name: "DEV_STATION_ALPHA", ip: "192.168.1.14", type: "laptop_mac" },
-    { id: "2", name: "NEXUS_NODE_X", ip: "192.168.1.102", type: "smartphone" }
-  ];
+  export let hostIp: string = "127.0.0.1";
+  export let hostPort: string = "6739";
+  export let connectedPeers: any[] = [];
+
+  let qrDataUrl = "";
+
+  // Svelte's reactive block: This runs automatically whenever roomCode or hostIp changes
+  $: {
+    if (roomCode !== "----" && hostIp !== "127.0.0.1") {
+      // The hybrid fallback URL
+      const joinUrl = `http://${hostIp}:${hostPort}/?join=${roomCode}`;
+      
+      QRCode.toDataURL(joinUrl, {
+        color: {
+          dark: '#00F0FF', // Our primary electric blue
+          light: '#090A0F' // Our obsidian background
+        },
+        margin: 2,
+        width: 200
+      }).then(url => {
+        qrDataUrl = url;
+      }).catch(err => {
+        console.error("QR Generation Error:", err);
+      });
+    }
+  }
 </script>
 
 <main class="w-full max-w-3xl mx-auto flex flex-col gap-8 pb-24">
@@ -25,15 +45,19 @@
       <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary-container rounded-bl-xl m-2 opacity-50"></div>
       <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary-container rounded-br-xl m-2 opacity-50"></div>
       
-      <div class="w-[200px] h-[200px] border border-border/50 flex items-center justify-center bg-background/50 text-text-secondary font-mono text-sm">
-        [ QR CODE GEN ]
-      </div>
+      {#if qrDataUrl}
+        <img src={qrDataUrl} alt="Join QR Code" class="w-[200px] h-[200px] border border-border/50 rounded" />
+      {:else}
+        <div class="w-[200px] h-[200px] border border-border/50 flex items-center justify-center bg-background/50 text-text-secondary font-mono text-sm">
+          GENERATING...
+        </div>
+      {/if}
     </div>
 
     <div class="flex flex-col items-center gap-2">
       <span class="font-mono text-sm text-text-secondary uppercase tracking-wider">Shout Code</span>
       <span class="font-mono text-[48px] leading-none font-bold text-primary-container tracking-[0.2em]">{roomCode}</span>
-      <span class="font-mono text-[48px] leading-none font-bold text-primary-container tracking-[0.2em]">{hostIpAddress}</span>
+      <span class="font-mono text-[48px] leading-none font-bold text-primary-container tracking-[0.2em]">{hostIp}</span>
     </div>
   </div>
 
