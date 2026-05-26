@@ -1,33 +1,77 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-  import { onMount, onDestroy } from 'svelte';
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+  import { onMount, onDestroy } from "svelte";
   import HostHub from "../components/HostHub.svelte";
 
   let currentView = "menu";
   let generatedRoomCode = "";
   let hostIpAddress = "";
-  let hostPort = ''; // New variable
-
-  // This is now our source of truth for the UI
+  let hostPort = ""; // New variable
   let activePeers: any[] = [];
   let unlistenPeers: UnlistenFn;
 
+  // guest state
+  let guestWs: WebSocket | null = null;
+  let guestStatus = "Connecting...";
+
+  // ws states
+  let ws: WebSocket;
+  let connectionStatus = "Disconnected";
+
   onMount(async () => {
-    // Tune into the "peer-update" radio frequency
-    unlistenPeers = await listen('peer-update', (event) => {
-      console.log("Received peer update from Rust:", event.payload);
+    // 1. Host Listener (Kept from before)
+    unlistenPeers = await listen("peer-update", (event) => {
       activePeers = event.payload as any[];
     });
+
+    // 2. Guest URL Parsing
+    // When the phone loads the app, check if it was from a QR scan
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get("join");
+    const targetPort = urlParams.get("port");
+
+    if (joinCode && targetPort) {
+      // We are a guest! Bypass the menu.
+      currentView = "guest_session";
+      // The hostname of the URL is the Host's IP (e.g., 192.168.1.133)
+      const targetIp = window.location.hostname;
+      connectAsGuest(targetIp, targetPort, joinCode);
+    }
   });
 
   onDestroy(() => {
-    // Clean up the listener if the page is destroyed
     if (unlistenPeers) unlistenPeers();
+    if (guestWs) guestWs.close();
   });
 
-  let ws: WebSocket;
-  let connectionStatus = "Disconnected";
+  // The actual guest connection logic
+  function connectAsGuest(ip: string, port: string, code: string) {
+    guestWs = new WebSocket(`ws://${ip}:${port}/ws`);
+
+    guestWs.onopen = () => {
+      guestStatus = `Connected to Crew: ${code}`;
+      const joinRequest = {
+        type: "JOIN_REQUEST",
+        // We will make this dynamic later, hardcoded for now to prove it works
+        payload: { name: "MOBILE_NODE_1" },
+      };
+      guestWs?.send(JSON.stringify(joinRequest));
+    };
+
+    guestWs.onmessage = (event) => {
+      console.log("Host says:", event.data);
+    };
+
+    guestWs.onclose = () => {
+      guestStatus = "Disconnected from Host.";
+      currentView = "menu"; // Kick them back to the menu
+    };
+
+    guestWs.onerror = () => {
+      guestStatus = "Connection failed.";
+    };
+  }
 
   // Simulate a guest joining the room
   function testGuestConnection() {
@@ -60,7 +104,7 @@
       const response = await invoke<string>("start_host_session");
 
       // Split it into variables
-      const [code, ip, port] = response.split('|');
+      const [code, ip, port] = response.split("|");
       generatedRoomCode = code;
       hostIpAddress = ip;
       hostPort = port;
@@ -123,8 +167,23 @@
           Join a Crew
         </button>
       </div>
-    {:else if currentView === 'hosting'}
-      <HostHub hostIp={hostIpAddress} hostPort={hostPort} roomCode={generatedRoomCode} connectedPeers={activePeers} />
+    {:else if currentView === "hosting"}
+      <HostHub
+        hostIp={hostIpAddress}
+        {hostPort}
+        roomCode={generatedRoomCode}
+        connectedPeers={activePeers}
+      />
+    {:else if currentView === "guest_session"}
+      <div class="flex flex-col items-center justify-center h-full gap-4 mt-20">
+        <div
+          class="w-12 h-12 rounded-full border-t-2 border-primary-container animate-spin"
+        ></div>
+        <h2 class="font-mono text-xl text-primary-container">{guestStatus}</h2>
+        <p class="text-text-secondary font-mono text-sm">
+          Waiting for host commands...
+        </p>
+      </div>
     {/if}
   </div>
 </div>

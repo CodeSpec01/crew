@@ -3,7 +3,7 @@
 
   export let roomCode: string = "----";
   export let hostIp: string = "127.0.0.1";
-  export let hostPort: string = "6739";
+  export let hostPort: string = "6769";
   export let connectedPeers: any[] = [];
 
   let qrDataUrl = "";
@@ -11,20 +11,21 @@
   // Svelte's reactive block: This runs automatically whenever roomCode or hostIp changes
   $: {
     if (roomCode !== "----" && hostIp !== "127.0.0.1") {
-      // The hybrid fallback URL
-      const joinUrl = `http://${hostIp}:${hostPort}/?join=${roomCode}`;
+      // 1. Point to Vite (1420) for the UI in development
+      // 2. Pass both the room code AND the Axum port as URL parameters
+      const joinUrl = `http://${hostIp}:1420/?join=${roomCode}&port=${hostPort}`;
       
       QRCode.toDataURL(joinUrl, {
         color: {
-          dark: '#00F0FF', // Our primary electric blue
-          light: '#090A0F' // Our obsidian background
+          dark: '#00F0FF',
+          light: '#090A0F'
         },
         margin: 2,
         width: 200
       }).then(url => {
         qrDataUrl = url;
       }).catch(err => {
-        console.error("QR Generation Error:", err);
+        console.error("QR Error:", err);
       });
     }
   }
